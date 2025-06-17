@@ -1,101 +1,70 @@
-const peer = new Peer({
-    id: "oussamaFARHAT",
-    iceServers: [
-        { "urls": "stun.l.google.com:19302" },
-        { "urls": "stun1.l.google.com:19302" },
-        { "urls": "stun2.l.google.com:19302" },
-        { "urls": "stun3.l.google.com:19302" },
-        { "urls": "stun4.l.google.com:19302" },
-        { "urls": "stun01.sipphone.com" },
-        { "urls": "stun.ekiga.net" },
-        { "urls": "stun.fwdnet.net" },
-        { "urls": "stun.ideasip.com" },
-        { "urls": "stun.iptel.org" },
-        { "urls": "stun.rixtelecom.se" },
-        { "urls": "stun.schlund.de" },
-        { "urls": "stunserver.org" },
-        { "urls": "stun.softjoys.com" },
-        { "urls": "stun.voiparound.com" },
-        { "urls": "stun.voipbuster.com" },
-        { "urls": "stun.voipstunt.com" },
-        { "urls": "stun.voxgratia.org" },
-        { "urls": "stun.xten.com" },
 
-        {
-            "urls": "turn:relay1.expressturn.com:3478",
-            "username": "efMGSZNRN0AXK8IB5I",
-            "credential": "mSh16Q6ZqgRonosj+4dL7Fn",
-        },
-    ]
-});
-var currentCall;
-var key = 0;
-peer.on("open", function (id) {
-    document.getElementById("uuid").innerHTML = id;
-
-});
-async function callUser() {
-    // get the id entered by the user
-    const peerId = document.querySelector("input").value; // grab the camera and mic
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-    }); // switch to the video call and play the camera preview
-    document.getElementById("local-video").srcObject = stream;
-    document.getElementById("local-video").play(); // make the call
-    const call = peer.call(peerId, stream);
-    call.on("stream", (stream) => {
-        document.getElementById("remote-video").srcObject = stream;
-        document.getElementById("remote-video").play();
+    const peer = new Peer({
+      config: {
+        iceServers: [
+            { urls: "stun:stun.relay.metered.ca:80" },
+            { urls: "stun:stun.sipnet.net:3478" },
+            { urls: "stun:stun.sipnet.ru:3478" },
+            { urls: "stun:stun.stunprotocol.org:3478" },
+            { urls: 'turn:154.16.172.10:3478',username: 'key1',credential: 'password1' } 
+        ],
+      },
     });
-    // call.on("data", (stream) => {
-    //     document.querySelector("#remote-video").srcObject = stream;
-    //     document.getElementById("remote-video").play();
 
-    // });
-    call.on("error", (err) => {
-        console.log(err);
+    let currentCall;
+ 
+
+    peer.on("open", (id) => {
+      document.getElementById("uuid").innerText = id;
     });
-    call.on('close', () => {
-        endCall()
-    }) // save the close function
-    currentCall = call;
-}
 
+    async function callUser() {
+      const peerId = document.querySelector("input").value;
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
-peer.on("call", (call) => {
-    key++
-    if (confirm(`Accept call from ${call.peer}?`)) {
-        // grab the camera and mic
-        navigator.mediaDevices
-            .getUserMedia({ video: true, audio: true })
-            .then((stream) => {
-                console.log("yes")
-                // play the local preview
-                document.querySelector("#local-video").srcObject = stream;
-                document.querySelector("#local-video").play(); // answer the call
-                call.answer(stream); // save the close function
-                currentCall = call; // change to the video view
-                call.on("stream", (remoteStream) => {
-                    // when we receive the remote stream, play it
-                    document.getElementById("remote-video" + key.toString()).srcObject = remoteStream;
-                    document.getElementById("remote-video" + key.toString()).play();
-                });
-            })
-            .catch((err) => {
-                console.log("Failed to get local stream:", err);
-            });
-    } else {
-        // user rejected the call, close it
-        call.close();
+      document.getElementById("local-video").srcObject = stream;
+      document.getElementById("local-video").play();
+
+      const call = peer.call(peerId, stream);
+
+   
+
+      call.on("error", (err) => console.error(err));
+      call.on("close", endCall);
+      currentCall = call;
     }
-});
+    peer.on("call", (call) => {
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          document.getElementById("local-video").srcObject = stream;
+          document.getElementById("local-video").play();
+          console.log("stream", stream);
+          call.answer(stream);
+          call.on("stream", remoteStream => {
+            console.log("Received remote stream from caller");
+            const remoteVideo = document.getElementById("remote-video");
+            remoteVideo.srcObject = remoteStream;
+            remoteVideo.play();
+          });
+          call.on("close", endCall);
+          call.on("error", (err) => console.error(err));
+          currentCall = call;
+        })
+        .catch((err) => {
+          console.error("Failed to get local stream:", err);
+        });
+    });
 
-
-function endCall() {
-    if (!currentCall) return; // Close the call, and reset the function
-    try {
+    function endCall() {
+        console.log("endCall");
+      if (!currentCall) return;
+      try {
         currentCall.close();
-    } catch { }
-    currentCall = undefined;
-}
+      } catch (e) {}
+      currentCall = undefined;
+    }
+
+    peer.on("error", (err) => {
+      console.error("PeerJS error:", err);
+    });

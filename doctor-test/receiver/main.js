@@ -1,95 +1,77 @@
 const peer = new Peer({
     id: "oussamaFARHAT",
+    config: {
+        iceServers: [
+            { urls: "stun:stun.relay.metered.ca:80" },
+            { urls: "stun:stun.sipnet.net:3478" },
+            { urls: "stun:stun.sipnet.ru:3478" },
+            { urls: "stun:stun.stunprotocol.org:3478" },
+            { urls: 'turn:154.16.172.10:3478',username: 'key1',credential: 'password1' } 
 
-    iceServers: [
-        {
-            urls: "stun:stun.relay.metered.ca:80",
-        },
-        {
-            urls: "turn:a.relay.metered.ca:80",
-            username: "fa35f3aab7723b88f2f72ab0",
-            credential: "B/glka1X3gSXhIRO",
-        },
-        {
-            urls: "turn:a.relay.metered.ca:80?transport=tcp",
-            username: "fa35f3aab7723b88f2f72ab0",
-            credential: "B/glka1X3gSXhIRO",
-        },
-        {
-            urls: "turn:a.relay.metered.ca:443",
-            username: "fa35f3aab7723b88f2f72ab0",
-            credential: "B/glka1X3gSXhIRO",
-        },
-        {
-            urls: "turn:a.relay.metered.ca:443?transport=tcp",
-            username: "fa35f3aab7723b88f2f72ab0",
-            credential: "B/glka1X3gSXhIRO",
-        },
-    ],
+           
+        ],
+    }
 });
-var currentCall;
-var key = 0;
+
+let currentCall;
 peer.on("open", function (id) {
     document.getElementById("uuid").innerHTML = id;
 });
+function getSilentStream() {
+    const ctx = new AudioContext();
+    const oscillator = ctx.createOscillator();
+    const dst = oscillator.connect(ctx.createMediaStreamDestination());
+    oscillator.start();
+    const audioTrack = dst.stream.getAudioTracks()[0];
+  
+    // Create black video track
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1;
+    const stream = canvas.captureStream();
+    const videoTrack = stream.getVideoTracks()[0];
+  
+    return new MediaStream([audioTrack, videoTrack]);
+  }
 async function callUser() {
-    // get the id entered by the user
-    const peerId = document.querySelector("input").value; // grab the camera and mic
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-    }); // switch to the video call and play the camera preview
-    document.getElementById("local-video").srcObject = stream;
-    document.getElementById("local-video").play(); // make the call
-    const call = peer.call(peerId, stream);
+    const peerId = document.querySelector("input").value;
+    const fakeStream = getSilentStream();
+
+    // Do NOT get local media
+    console.log("callUser");
+    const call = peer.call(peerId, fakeStream);  // ❗️Call with no media stream
+    if (!call) {
+        console.error("Call failed: peer may be unavailable or ID is incorrect.");
+        alert("Could not call the peer. Please check their ID or if they are online.");
+        return;
+    }
+
+
+    call.peerConnection.oniceconnectionstatechange = () => {
+        console.log("ICE state:", call.peerConnection.iceConnectionState);
+    };
+    
     call.on("stream", (stream) => {
-        document.getElementById("remote-video").srcObject = stream;
-        document.getElementById("remote-video").play();
+        console.log("stream", stream);
+        const remoteVideo = document.getElementById("remote-video");
+        remoteVideo.srcObject = stream;
+        remoteVideo.play();
     });
-    call.on("data", (stream) => {
-        document.querySelector("#remote-video").srcObject = stream;
-    });
+
     call.on("error", (err) => {
         console.log(err);
     });
-    call.on('close', () => {
-        endCall()
-    }) // save the close function
+
+    call.on("close", () => {
+        endCall();
+    });
+
     currentCall = call;
 }
 
 
-peer.on("call", (call) => {
-    key++
-    if (confirm(`Accept call from ${call.peer}?`)) {
-        // grab the camera and mic
-        navigator.mediaDevices
-            .getUserMedia({ video: true, audio: true })
-            .then((stream) => {
-                console.log("yes")
-                // play the local preview
-                document.querySelector("#local-video").srcObject = stream;
-                document.querySelector("#local-video").play(); // answer the call
-                call.answer(stream); // save the close function
-                currentCall = call; // change to the video view
-                call.on("stream", (remoteStream) => {
-                    // when we receive the remote stream, play it
-                    document.getElementById("remote-video" + key.toString()).srcObject = remoteStream;
-                    document.getElementById("remote-video" + key.toString()).play();
-                });
-            })
-            .catch((err) => {
-                console.log("Failed to get local stream:", err);
-            });
-    } else {
-        // user rejected the call, close it
-        call.close();
-    }
-});
-
-
 function endCall() {
-    if (!currentCall) return; // Close the call, and reset the function
+    console.log("endCall");
+    if (!currentCall) return;
     try {
         currentCall.close();
     } catch { }
