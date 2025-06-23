@@ -1,10 +1,12 @@
-// Simple mediasoup signaling server for RTP Producer + WebRTC Consumers
+
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const socketIO = require('socket.io');
 const mediasoup = require('mediasoup');
 //ffmpeg -re -f dshow -i video="USB CAMERA" -vcodec libx264 -an -f rtp -ssrc 222222 rtp://127.0.0.1:16668
+//ffmpeg -re -f dshow -i video="Integrated Camera" -vcodec libx264 -an -f rtp -ssrc 222222 rtp://192.168.10.195:59940
+
 const app = express();
 app.use(cors())
 
@@ -32,7 +34,7 @@ const consumers = new Map();
   router = await worker.createRouter({ mediaCodecs });
 
   plainTransport = await router.createPlainTransport({
-    listenIp: '127.0.0.1',
+    listenIp: '0.0.0.0',
     rtcpMux: false,
     comedia: true,
     
@@ -83,7 +85,7 @@ io.on('connection', async (socket) => {
 
   socket.on('createWebRtcTransport', async (_, cb) => {
     const transport = await router.createWebRtcTransport({
-        listenIps: [{ ip: '0.0.0.0', announcedIp: '127.0.0.1' }],
+        listenIps: [{ ip: '0.0.0.0', announcedIp: '192.168.10.195' }],
 
       enableUdp: true,
       enableTcp: true,
@@ -147,7 +149,7 @@ io.on('connection', async (socket) => {
   });
 });
 
-server.listen(3000, () => {
+server.listen(3001, () => {
   console.log('Server running on http://localhost:3000');
 });
 
