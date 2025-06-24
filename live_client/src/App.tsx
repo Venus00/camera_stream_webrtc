@@ -6,7 +6,7 @@ const VideoViewer = () => {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    const socket = io(`http://${window.location.hostname}:3001`);
+    const socket = io(`http://${window.location.hostname}:3009`);
     let device;
     let transport;
 
