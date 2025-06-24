@@ -49,7 +49,7 @@ const VideoViewer = () => {
   videoRef.current.play().catch(err => {
     console.error('Autoplay failed:', err);
   });
-}
+
 
         
       }
