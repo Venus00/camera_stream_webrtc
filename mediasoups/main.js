@@ -119,18 +119,20 @@ io.on('connection', async (socket) => {
           }
     });
 
-    socket.on('consume', async (cb) => {
+    socket.on('consume', async (data, cb) => {
       if (!producer) return;
+    
       const consumer = await transport.consume({
         producerId: producer.id,
-        rtpCapabilities: router.rtpCapabilities,
+        rtpCapabilities: data.rtpCapabilities, // <- now using data
         paused: false,
       });
+    
       await consumer.resume(); 
       console.log('Consumer created:', consumer.id, consumer.kind);
-
+    
       consumers.get(socket.id).consumer = consumer;
-
+    
       cb({
         id: consumer.id,
         producerId: producer.id,
