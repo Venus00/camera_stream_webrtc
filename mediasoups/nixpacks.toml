@@ -1,0 +1,10 @@
+# nixpacks.toml
+
+[phases.setup]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = "node main.js"
