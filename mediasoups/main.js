@@ -36,9 +36,8 @@ const consumers = new Map();
 
   plainTransport = await router.createPlainTransport({
     listenIp: '0.0.0.0',
-    rtcpMux: true,
+    rtcpMux: false,
     comedia: true,
-    port:52080
     
   });
 
