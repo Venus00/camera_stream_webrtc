@@ -36,8 +36,8 @@ const consumers = new Map();
 
   plainTransport = await router.createPlainTransport({
     listenIp: '0.0.0.0',
-    rtcpMux: false,
-    comedia: true,
+    rtcpMux: true,
+    comedia: false,
 
     
   });
@@ -87,7 +87,7 @@ io.on('connection', async (socket) => {
 
   socket.on('createWebRtcTransport', async (_, cb) => {
     const transport = await router.createWebRtcTransport({
-        listenIps: [{ ip: '54.36.62.219', announcedIp: '54.36.62.219' }],
+        listenIps: [{ ip: '0.0.0.0', announcedIp: '54.36.62.219' }],
 
       enableUdp: true,
       enableTcp: true,
