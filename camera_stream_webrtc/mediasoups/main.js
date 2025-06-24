@@ -1,12 +1,10 @@
-
+// Simple mediasoup signaling server for RTP Producer + WebRTC Consumers
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const socketIO = require('socket.io');
 const mediasoup = require('mediasoup');
-//ffmpeg -re -f dshow -i video="USB CAMERA" -vcodec libx264 -an -f rtp -ssrc 222222 rtp://127.0.0.1:16668
-//ffmpeg -re -f dshow -i video="5MP USB Camera" -vcodec libx264 -an -f rtp -ssrc 222222 rtp://192.168.10.195:34138
-//ffmpeg -re -f dshow -video_size 640x480 -rtbufsize 200M -i video="5MP USB Camera" -vcodec libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p -b:v 1000k -maxrate 1000k -bufsize 2000k -an -f rtp -ssrc 222222 rtp://192.168.10.195:52076
+
 const app = express();
 app.use(cors())
 
@@ -34,18 +32,17 @@ const consumers = new Map();
   router = await worker.createRouter({ mediaCodecs });
 
   plainTransport = await router.createPlainTransport({
-    listenIp: '0.0.0.0',
-    rtcpMux: true,
+    listenIp: '127.0.0.1',
+    rtcpMux: false,
     comedia: true,
-    
   });
 
   console.log('Send RTP to:', plainTransport.tuple.localIp, plainTransport.tuple.localPort);
-  plainTransport.observer.on('tuple', (tuple) => {
-    console.log('PlainTransport tuple event:', tuple);
+  plainTransport.on('trace', (trace) => {
+    console.log('PlainTransport trace event:', trace);
   });
   
-  plainTransport.observer.on('packet', (packet) => {
+  plainTransport.on('packet', (packet) => {
     console.log('PlainTransport received RTP packet:', packet.length, 'bytes');
   });
   producer = await plainTransport.produce({
@@ -66,9 +63,6 @@ const consumers = new Map();
   producer.on('score', (score) => {
     console.log('Producer score updated:', score);
   });
-  producer.on('trace', (trace) => {
-    console.log('Producer trace updated:', trace);
-  });
   
   producer.on('transportclose', () => {
     console.log('Producer transport closed');
@@ -85,7 +79,7 @@ io.on('connection', async (socket) => {
 
   socket.on('createWebRtcTransport', async (_, cb) => {
     const transport = await router.createWebRtcTransport({
-        listenIps: [{ ip: '0.0.0.0', announcedIp: '154.144.229.22' }],
+        listenIps: [{ ip: '0.0.0.0', announcedIp: '127.0.0.1' }],
 
       enableUdp: true,
       enableTcp: true,
@@ -127,7 +121,6 @@ io.on('connection', async (socket) => {
         paused: false,
       });
       await consumer.resume(); 
-      console.log('Consumer created:', consumer.id, consumer.kind);
 
       consumers.get(socket.id).consumer = consumer;
 
@@ -148,10 +141,13 @@ io.on('connection', async (socket) => {
     console.log('Client disconnected:', socket.id);
   });
 });
-
-server.listen(3009, () => {
+setInterval(async () => {
+    if (producer) {
+      const stats = await producer.getStats();
+      console.log('Producer stats:', stats);
+    }
+  }, 5000);
+server.listen(3000, () => {
   console.log('Server running on http://localhost:3000');
 });
-
-
 

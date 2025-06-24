@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>video</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+
+<body>
+
+    <div id="menu">
+        <p>Your ID:</p>
+        <p id="uuid"></p>
+        <input type="text" placeholder="Peer id" />
+
+
+        <button onclick="callUser()">Connect</button>
+        <table>
+            <tr>
+                <td> <video id="local-video" muted="true"></video>
+                </td>
+                <video id="remote-video"></video>
+                <td> <video id="remote-video1"></video>
+                </td>
+                <td><video id="remote-video2"></video></td>
+            </tr>
+        </table>
+    </div>
+    <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+
+
+    <script src="main.js"></script>
+</body>
+
+</html>
