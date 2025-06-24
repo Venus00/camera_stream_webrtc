@@ -46,13 +46,13 @@ const VideoViewer = () => {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+ // Force autoplay
+ videoRef.current
+ .play()
+ .then(() => console.log('Video playing!'))
+ .catch((err) => console.error('Autoplay failed:', err));
 
-         // Force autoplay
-         videoRef.current
-         .play()
-         .then(() => console.log('Video playing!'))
-         .catch((err) => console.error('Autoplay failed:', err));
-     }
+        
       }
       
     }
