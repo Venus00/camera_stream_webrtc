@@ -87,9 +87,9 @@ io.on('connection', async (socket) => {
     const transport = await router.createWebRtcTransport({
         listenIps: [{ ip: '0.0.0.0', announcedIp: '154.144.229.22' }],
 
-      enableUdp: true,
-      enableTcp: true,
-      preferUdp: true,
+      // enableUdp: true,
+      // enableTcp: true,
+      // preferUdp: true,
     });
     transport.on('connectionstatechange', (state) => {
         console.log(`Transport connection state for ${socket.id}: ${state}`);
