@@ -4,7 +4,6 @@ const http = require('http');
 const cors = require('cors');
 const socketIO = require('socket.io');
 const mediasoup = require('mediasoup');
-//stream & ffmpeg -re -f rawvideo -pix_fmt yuv420p -video_size 640x480 -framerate 30 -i /tmp/yuv_pipe  -vcodec libx264 -preset ultrafast -tune zerolatency -b:v 1000k -maxrate 1000k -bufsize 2000k -an -f rtp -ssrc 222222 rtp://192.168.10.195:25434
 //ffmpeg -re -f dshow -i video="USB CAMERA" -vcodec libx264 -an -f rtp -ssrc 222222 rtp://127.0.0.1:16668
 //ffmpeg -re -f dshow -i video="5MP USB Camera" -vcodec libx264 -an -f rtp -ssrc 222222 rtp://192.168.10.195:34138
 //ffmpeg -re -f dshow -video_size 640x480 -rtbufsize 200M -i video="5MP USB Camera" -vcodec libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p -b:v 1000k -maxrate 1000k -bufsize 2000k -an -f rtp -ssrc 222222 rtp://192.168.10.195:52076
@@ -36,9 +35,8 @@ const consumers = new Map();
 
   plainTransport = await router.createPlainTransport({
     listenIp: '0.0.0.0',
-    rtcpMux: true,
+    rtcpMux: false,
     comedia: true,
-
     
   });
 
