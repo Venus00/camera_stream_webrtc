@@ -9,55 +9,57 @@ const VideoViewer = () => {
     const socket = io(`http://${window.location.hostname}:3009`);
     let device;
     let transport;
-
+  
     async function start() {
-      const rtpCapabilities = await new Promise(resolve => {
-        socket.emit('getRouterRtpCapabilities', resolve);
-      });
-      console.log(rtpCapabilities)
-      device = new mediasoupClient.Device();
-      await device.load({ routerRtpCapabilities: rtpCapabilities });
-
-      const transportInfo = await new Promise(resolve => {
-        socket.emit('createWebRtcTransport', {}, resolve);
-      });
-      console.log(transportInfo)
-      transport = device.createRecvTransport(transportInfo);
-      console.log('transport', transport)
-
-      transport.on('connect', ({ dtlsParameters }, callback, errback) => {
-        socket.emit('connectWebRtcTransport', { dtlsParameters });
-        callback();
-      });
-
-      const consumerInfo = await new Promise(resolve => {
-        socket.emit('consume', resolve);
-      });
-      console.log("conso", consumerInfo)
-      const consumer = await transport.consume({
-        id: consumerInfo.id,
-        producerId: consumerInfo.producerId,
-        kind: consumerInfo.kind,
-        rtpParameters: consumerInfo.rtpParameters,
-      });
-      console.log(consumer)
-      const stream = new MediaStream();
-      stream.addTrack(consumer.track);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(err => {
-          console.error('Autoplay failed:', err);
+      try {
+        const rtpCapabilities = await new Promise(resolve => {
+          socket.emit('getRouterRtpCapabilities', resolve);
         });
+  
+        device = new mediasoupClient.Device();
+        await device.load({ routerRtpCapabilities: rtpCapabilities });
+  
+        const transportInfo = await new Promise(resolve => {
+          socket.emit('createWebRtcTransport', {}, resolve);
+        });
+  
+        transport = device.createRecvTransport(transportInfo);
+  
+        transport.on('connect', ({ dtlsParameters }, callback, errback) => {
+          socket.emit('connectWebRtcTransport', { dtlsParameters }, (response) => {
+            if (response?.error) {
+              errback(response.error);
+            } else {
+              callback();
+            }
+          });
+        });
+  
+        const consumerInfo = await new Promise(resolve => {
+          socket.emit('consume', resolve);
+        });
+  
+        const consumer = await transport.consume({
+          id: consumerInfo.id,
+          producerId: consumerInfo.producerId,
+          kind: consumerInfo.kind,
+          rtpParameters: consumerInfo.rtpParameters,
+        });
+  
+        const stream = new MediaStream();
+        stream.addTrack(consumer.track);
+  
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+      } catch (err) {
+        console.error('Error in mediasoup consumer:', err);
       }
-
-        
-      
-      
     }
-
+  
     start();
-
+  
     return () => {
       socket.disconnect();
     };
