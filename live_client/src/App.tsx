@@ -61,7 +61,7 @@ const VideoViewer = () => {
       <h1>tt</h1>
       <video
         ref={videoRef}
-
+        autoPlay
         controls
 
         style={{ width: '100%', maxWidth: '800px' }}

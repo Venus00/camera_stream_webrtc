@@ -5,7 +5,7 @@ const cors = require('cors');
 const socketIO = require('socket.io');
 const mediasoup = require('mediasoup');
 //ffmpeg -re -f dshow -i video="USB CAMERA" -vcodec libx264 -an -f rtp -ssrc 222222 rtp://127.0.0.1:16668
-//ffmpeg -re -f dshow -i video="Integrated Camera" -vcodec libx264 -an -f rtp -ssrc 222222 rtp://192.168.10.195:59940
+//ffmpeg -re -f dshow -i video="5MP USB Camera" -vcodec libx264 -an -f rtp -ssrc 222222 rtp://192.168.10.195:34138
 
 const app = express();
 app.use(cors())
@@ -85,7 +85,7 @@ io.on('connection', async (socket) => {
 
   socket.on('createWebRtcTransport', async (_, cb) => {
     const transport = await router.createWebRtcTransport({
-        listenIps: [{ ip: '0.0.0.0', announcedIp: '192.168.10.195' }],
+        listenIps: [{ ip: '0.0.0.0', announcedIp: '154.144.229.22' }],
 
       enableUdp: true,
       enableTcp: true,
