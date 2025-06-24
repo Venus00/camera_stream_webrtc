@@ -46,14 +46,13 @@ const VideoViewer = () => {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
- // Force autoplay
- videoRef.current
- .play()
- .then(() => console.log('Video playing!'))
- .catch((err) => console.error('Autoplay failed:', err));
+        videoRef.current.play().catch(err => {
+          console.error('Autoplay failed:', err);
+        });
+      }
 
         
-      }
+      
       
     }
 
@@ -70,7 +69,7 @@ const VideoViewer = () => {
       <video
         ref={videoRef}
         autoPlay
-        controls
+        muted
         playsInline
         style={{ width: '100%', maxWidth: '800px' }}
       />
