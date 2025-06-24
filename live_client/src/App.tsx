@@ -44,16 +44,9 @@ const VideoViewer = () => {
       const stream = new MediaStream();
       stream.addTrack(consumer.track);
 
- if (videoRef.current) {
-  videoRef.current.srcObject = stream;
-  videoRef.current.play().catch(err => {
-    console.error('Autoplay failed:', err);
-  });
-
-
-        
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
       }
-      
     }
 
     start();
@@ -70,7 +63,7 @@ const VideoViewer = () => {
         ref={videoRef}
         autoPlay
         controls
-        playsInline
+
         style={{ width: '100%', maxWidth: '800px' }}
       />
     </div>
