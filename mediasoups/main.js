@@ -6,16 +6,16 @@ const socketIO = require('socket.io');
 const mediasoup = require('mediasoup');
 //ffmpeg -re -f dshow -i video="USB CAMERA" -vcodec libx264 -an -f rtp -ssrc 222222 rtp://127.0.0.1:16668
 //ffmpeg -re -f dshow -i video="5MP USB Camera" -vcodec libx264 -an -f rtp -ssrc 222222 rtp://192.168.10.195:34138
-//ffmpeg -re -f dshow -video_size 640x480 -rtbufsize 200M -i video="5MP USB Camera" -vcodec libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p -b:v 1000k -maxrate 1000k -bufsize 2000k -an -f rtp -ssrc 222222 rtp://192.168.10.195:52076
+
 const app = express();
 app.use(cors())
 
 const server = http.createServer(app);
-const io = socketIO(server,{
-    cors: {
-      origin: '*',
-    }
-  });
+const io = socketIO(server, {
+  cors: {
+    origin: '*',
+  }
+});
 
 const mediaCodecs = [
   {
@@ -35,16 +35,16 @@ const consumers = new Map();
 
   plainTransport = await router.createPlainTransport({
     listenIp: '0.0.0.0',
-    rtcpMux: true,
+    rtcpMux: false,
     comedia: true,
-    
+
   });
 
   console.log('Send RTP to:', plainTransport.tuple.localIp, plainTransport.tuple.localPort);
   plainTransport.observer.on('tuple', (tuple) => {
     console.log('PlainTransport tuple event:', tuple);
   });
-  
+
   plainTransport.observer.on('packet', (packet) => {
     console.log('PlainTransport received RTP packet:', packet.length, 'bytes');
   });
@@ -69,7 +69,7 @@ const consumers = new Map();
   producer.on('trace', (trace) => {
     console.log('Producer trace updated:', trace);
   });
-  
+
   producer.on('transportclose', () => {
     console.log('Producer transport closed');
   });
@@ -85,15 +85,15 @@ io.on('connection', async (socket) => {
 
   socket.on('createWebRtcTransport', async (_, cb) => {
     const transport = await router.createWebRtcTransport({
-        listenIps: [{ ip: '0.0.0.0', announcedIp: '154.144.229.22' }],
+      listenIps: [{ ip: '0.0.0.0', announcedIp: '154.144.229.22' }],
 
       enableUdp: true,
       enableTcp: true,
       preferUdp: true,
     });
     transport.on('connectionstatechange', (state) => {
-        console.log(`Transport connection state for ${socket.id}: ${state}`);
-      });
+      console.log(`Transport connection state for ${socket.id}: ${state}`);
+    });
     console.log('RTP port:', plainTransport.tuple.localPort);
 
     consumers.set(socket.id, { transport });
@@ -107,32 +107,30 @@ io.on('connection', async (socket) => {
     });
 
     socket.on('connectWebRtcTransport', async ({ dtlsParameters }) => {
-        console.log('connectWebRtcTransport', dtlsParameters)
-        try {
-            await transport.connect({ dtlsParameters });
-            console.log('WebRTC transport connected for client:', socket.id);
-            transport.on('connectionstatechange', (state) => {
-                console.log(`Transport state for ${socket.id}: ${state}`);
-              });
-          } catch (err) {
-            console.error('Transport connect error:', err);
-          }
+      console.log('connectWebRtcTransport', dtlsParameters)
+      try {
+        await transport.connect({ dtlsParameters });
+        console.log('WebRTC transport connected for client:', socket.id);
+        transport.on('connectionstatechange', (state) => {
+          console.log(`Transport state for ${socket.id}: ${state}`);
+        });
+      } catch (err) {
+        console.error('Transport connect error:', err);
+      }
     });
 
-    socket.on('consume', async (data, cb) => {
+    socket.on('consume', async (cb) => {
       if (!producer) return;
-    
       const consumer = await transport.consume({
         producerId: producer.id,
-        rtpCapabilities: data.rtpCapabilities, // <- now using data
+        rtpCapabilities: router.rtpCapabilities,
         paused: false,
       });
-    
-      await consumer.resume(); 
+      await consumer.resume();
       console.log('Consumer created:', consumer.id, consumer.kind);
-    
+
       consumers.get(socket.id).consumer = consumer;
-    
+
       cb({
         id: consumer.id,
         producerId: producer.id,
@@ -154,6 +152,3 @@ io.on('connection', async (socket) => {
 server.listen(3009, () => {
   console.log('Server running on http://localhost:3000');
 });
-
-
-
