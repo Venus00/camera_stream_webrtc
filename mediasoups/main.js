@@ -35,9 +35,11 @@ const consumers = new Map();
 
   plainTransport = await router.createPlainTransport({
     listenIp: '0.0.0.0',
-    rtcpMux: false,
+    rtcpMux: true,
     comedia: true,
-
+    enableTcp: true,               
+    enableUdp: false,               
+    preferTcp: true, 
   });
 
   console.log('Send RTP to:', plainTransport.tuple.localIp, plainTransport.tuple.localPort);
@@ -87,9 +89,9 @@ io.on('connection', async (socket) => {
     const transport = await router.createWebRtcTransport({
       listenIps: [{ ip: '0.0.0.0', announcedIp: '154.144.229.22' }],
 
-      enableUdp: true,
+      enableUdp: false,
       enableTcp: true,
-      preferUdp: true,
+      preferTcp: true,
     });
     transport.on('connectionstatechange', (state) => {
       console.log(`Transport connection state for ${socket.id}: ${state}`);
