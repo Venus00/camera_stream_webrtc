@@ -37,6 +37,8 @@ const mediaCodecs = [
 let worker, router, plainTransport, producer;
 const consumers = new Map();
 
+
+
 (async () => {
   worker = await mediasoup.createWorker();
   router = await worker.createRouter({ mediaCodecs });
@@ -84,34 +86,21 @@ const consumers = new Map();
       encodings: [{ ssrc: 222222 }],
     },
   });
-  producer.enableTraceEvent(['rtp', 'keyframe', 'nack', 'pli']);
-  producer.on('listenererror',(eventName,event)=>{
-    console.log("listenError Producer",(eventName,event))
-  })
-  plainTransport.observer.on('tuple', (tuple) => {
-    console.log('PlainTransport tuple event:', tuple);
-  });
 
+  setInterval(() => {
+    const now = Date.now();
+    const diff = now - lastRtpTime;
+    if (diff > 5000) { 
+      console.warn(` RTP inactivity detected. Last packet was ${diff}ms ago.`);
+      recreateProducer();
+    }
+  }, 1000);
+ 
   plainTransport.observer.on('packet', (packet) => {
     console.log('PlainTransport received RTP packet:', packet.length, 'bytes');
-    lastRtpTime = Date.now();
-
-  });
-  plainTransport.observer.on('trace', (packet) => {
-    console.log('')
-
-  });
-  producer.on('score', (score) => {
-    console.log('Producer score updated:', score);
-  });
-  producer.on('trace', (trace) => {
-    console.log('Producer trace updated:', trace);
   });
 
-  producer.on('transportclose', () => {
-    console.log('Producer transport closed');
-  });
-  console.log('Producer created:', producer.id);
+
 })();
 
 io.on('connection', async (socket) => {
@@ -187,3 +176,42 @@ io.on('connection', async (socket) => {
 server.listen(3009, () => {
   console.log('Server running on http://localhost:3000');
 });
+
+async function recreateProducer() {
+  try {
+    
+    if (producer) {
+      producer.close();
+    }
+    producer = await plainTransport.produce({
+      kind: 'video',
+      rtpParameters: {
+        codecs: [
+          {
+            mimeType: 'video/H264',
+            clockRate: 90000,
+            payloadType: 96,
+            parameters: {},
+            rtcpFeedback: [],
+          },
+        ],
+        encodings: [{ ssrc: 222222 }],
+      },
+    });
+
+    producer.enableTraceEvent(['rtp']);
+    console.log('✅ Producer recreated at', new Date());
+    producer.on('listenererror',(eventName,event)=>{
+      if(eventName === 'rtp') lastRtpTime = new Date()
+      console.log("listenError Producer",(eventName,event))
+    });
+  
+  
+    producer.on('score', (score) => {
+      console.log('Producer score updated:', score);
+    });
+    console.log('Producer created:', producer.id);
+  } catch (error) {
+    console.error(error);
+  }
+}
