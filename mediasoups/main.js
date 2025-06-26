@@ -84,7 +84,9 @@ const consumers = new Map();
     },
   });
 
-
+  producer.on('listenererror',(eventName,event)=>{
+    console.log("listenError Producer",(eventName,event))
+  })
   plainTransport.observer.on('tuple', (tuple) => {
     console.log('PlainTransport tuple event:', tuple);
   });
