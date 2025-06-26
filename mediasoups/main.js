@@ -48,7 +48,7 @@ const consumers = new Map();
     enableTcp: true,               
     enableUdp: false,               
     preferTcp: true, 
-    port:5603
+    port:5603,
   });
 
   console.log('Send RTP to:', plainTransport.tuple.localIp, plainTransport.tuple.localPort);
@@ -56,17 +56,11 @@ const consumers = new Map();
   let lastRtpTime = Date.now();
 
 
-  
-  plainTransport.observer.on("newworker", (worker) =>
-  {
-    console.log("new worker created [worke.pid:%d]", worker.pid);
-  
-    worker.observer.on("close", () => 
-    {
-      console.log("worker closed [worker.pid:%d]", worker.pid);
-    });
 
+  plainTransport.on('listenererror',(eventName,error)=>{
+    console.log(eventName,error);
   })
+
 
   producer = await plainTransport.produce({
     kind: 'video',
@@ -94,9 +88,10 @@ const consumers = new Map();
     lastRtpTime = Date.now();
 
   });
+  plainTransport.observer.on('trace', (packet) => {
+    console.log('')
 
-
-
+  });
   producer.on('score', (score) => {
     console.log('Producer score updated:', score);
   });
@@ -120,7 +115,6 @@ io.on('connection', async (socket) => {
   socket.on('createWebRtcTransport', async (_, cb) => {
     const transport = await router.createWebRtcTransport({
       listenIps: [{ ip: '0.0.0.0', announcedIp: '54.36.62.219' }],
-
       enableUdp: false,
       enableTcp: true,
       preferTcp: true,
@@ -162,9 +156,7 @@ io.on('connection', async (socket) => {
       });
       await consumer.resume();
       console.log('Consumer created:', consumer.id, consumer.kind);
-
       consumers.get(socket.id).consumer = consumer;
-
       cb({
         id: consumer.id,
         producerId: producer.id,
