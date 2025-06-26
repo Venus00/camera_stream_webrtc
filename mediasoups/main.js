@@ -204,7 +204,8 @@ async function recreateProducer() {
       lastRtpTime = new Date()
     }
   })
-  producer.on('listenererror', (eventName) => {
+  producer.observer.on('listenererror', (eventName) => {
+    console.log(eventName)
     if(eventName === 'rtp') {
       console.log("event rtp observer")
       lastRtpTime = new Date()
