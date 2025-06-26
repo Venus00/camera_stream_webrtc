@@ -133,8 +133,13 @@ server.listen(3009, () => {
 async function recreateProducer() {
   try {
     
+
     if (producer) {
       producer.close();
+    }
+    if (plainTransport) {
+      plainTransport.close();
+      plainTransport = null;
     }
     plainTransport = await router.createPlainTransport({
       listenIp: '0.0.0.0',
