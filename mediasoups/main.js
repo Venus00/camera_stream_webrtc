@@ -23,6 +23,7 @@ const mediaCodecs = [
     mimeType: 'video/H264',
     clockRate: 90000,
     parameters: {},
+
   },
 ];
 
@@ -40,15 +41,25 @@ const consumers = new Map();
     enableTcp: true,               
     enableUdp: false,               
     preferTcp: true, 
+    port:5603
   });
 
   console.log('Send RTP to:', plainTransport.tuple.localIp, plainTransport.tuple.localPort);
+
+  let lastRtpTime = Date.now();
+
+
+
+
+
   plainTransport.observer.on('tuple', (tuple) => {
     console.log('PlainTransport tuple event:', tuple);
   });
 
   plainTransport.observer.on('packet', (packet) => {
     console.log('PlainTransport received RTP packet:', packet.length, 'bytes');
+    lastRtpTime = Date.now();
+
   });
   producer = await plainTransport.produce({
     kind: 'video',
@@ -65,6 +76,16 @@ const consumers = new Map();
       encodings: [{ ssrc: 222222 }],
     },
   });
+
+  setInterval(async () => {
+    if (Date.now() - lastRtpTime > 5000 && producer) {
+      console.log('No RTP packets received for 5s, closing producer...');
+      await producer.close();
+      producer = null;
+    }
+  }, 1000);
+
+  
   producer.on('score', (score) => {
     console.log('Producer score updated:', score);
   });
@@ -105,7 +126,7 @@ io.on('connection', async (socket) => {
       iceParameters: transport.iceParameters,
       iceCandidates: transport.iceCandidates,
       dtlsParameters: transport.dtlsParameters,
-      producerId: producer.id,
+      producerIds: [producer.id],
     });
 
     socket.on('connectWebRtcTransport', async ({ dtlsParameters }) => {
