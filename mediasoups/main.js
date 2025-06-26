@@ -49,6 +49,7 @@ const consumers = new Map();
   let lastRtpTime = Date.now();
 
   plainTransport.observer.on('packet', async () => {
+    console.log("yes")
     lastRtpTime = Date.now();
   
     if (!producer) {
