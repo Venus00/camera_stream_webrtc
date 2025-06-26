@@ -61,6 +61,9 @@ const consumers = new Map();
     console.log(eventName,error);
   })
 
+  plainTransport.on('tuple',(eventName,event)=>{
+    console.log('trave',eventName,event)
+  })
 
   producer = await plainTransport.produce({
     kind: 'video',
