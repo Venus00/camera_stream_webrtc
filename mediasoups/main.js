@@ -43,16 +43,16 @@ const consumers = new Map();
 
 
   
-  recreateProducer()
-  setInterval(() => {
+  await recreateProducer()
+  setInterval(async () => {
     console.log(lastRtpTime)
     const now = Date.now();
     const diff = now - lastRtpTime;
     if (diff > 5000) { 
       console.warn(` RTP inactivity detected. Last packet was ${diff}ms ago.`);
-      recreateProducer();
+      await recreateProducer();
     }
-  }, 1000);
+  }, 4000);
  
 
 })();
