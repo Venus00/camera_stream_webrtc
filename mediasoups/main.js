@@ -193,9 +193,7 @@ async function recreateProducer() {
     });
   
   producer.on('trace',(eventName)=>{
-    console.log(eventName)
     if(eventName === 'rtp') {
-      console.log("event rtp")
       lastRtpTime = new Date()
     }
   })
@@ -205,13 +203,7 @@ async function recreateProducer() {
       lastRtpTime = new Date()
     }
   })
-  producer.observer.on('listenererror', (eventName) => {
-    console.log(eventName)
-    if(eventName === 'rtp') {
-      console.log("event rtp observer")
-      lastRtpTime = new Date()
-    }
-  });
+
     producer.on('score', (score) => {
       console.log('Producer score updated:', score);
     });
