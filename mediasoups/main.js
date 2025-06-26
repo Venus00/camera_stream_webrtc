@@ -54,9 +54,7 @@ const consumers = new Map();
     }
   }, 1000);
  
-  plainTransport.observer.on('packet', (packet) => {
-    console.log('PlainTransport received RTP packet:', packet.length, 'bytes');
-  });
+
 })();
 
 io.on('connection', async (socket) => {
@@ -147,7 +145,9 @@ async function recreateProducer() {
       preferTcp: true, 
       port:5603,
     });
-  
+    plainTransport.observer.on('packet', (packet) => {
+      console.log('PlainTransport received RTP packet:', packet.length, 'bytes');
+    });
     console.log('Send RTP to:', plainTransport.tuple.localIp, plainTransport.tuple.localPort);
   
     plainTransport.on('listenererror',(eventName,error)=>{
