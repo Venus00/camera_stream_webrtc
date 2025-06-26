@@ -37,41 +37,12 @@ const mediaCodecs = [
 let worker, router, plainTransport, producer;
 const consumers = new Map();
 
-
-
 (async () => {
   worker = await mediasoup.createWorker();
   router = await worker.createRouter({ mediaCodecs });
 
-  plainTransport = await router.createPlainTransport({
-    listenIp: '0.0.0.0',
-    rtcpMux: true,
-    comedia: true,
-    enableTcp: true,               
-    enableUdp: false,               
-    preferTcp: true, 
-    port:5603,
-  });
 
-  console.log('Send RTP to:', plainTransport.tuple.localIp, plainTransport.tuple.localPort);
-
-
-
-
-
-  plainTransport.on('listenererror',(eventName,error)=>{
-    console.log(eventName,error);
-  })
-
-  plainTransport.on('tuple',(eventName,event)=>{
-    console.log('trave',eventName,event)
-  })
-
-  plainTransport.observer.on('trace',(eventName,event)=>{
-    console.log('trace',eventName,event)
-  })
   
-
   recreateProducer()
   setInterval(() => {
     console.log(lastRtpTime)
@@ -86,8 +57,6 @@ const consumers = new Map();
   plainTransport.observer.on('packet', (packet) => {
     console.log('PlainTransport received RTP packet:', packet.length, 'bytes');
   });
-
-
 })();
 
 io.on('connection', async (socket) => {
@@ -169,6 +138,30 @@ async function recreateProducer() {
     if (producer) {
       producer.close();
     }
+    plainTransport = await router.createPlainTransport({
+      listenIp: '0.0.0.0',
+      rtcpMux: true,
+      comedia: true,
+      enableTcp: true,               
+      enableUdp: false,               
+      preferTcp: true, 
+      port:5603,
+    });
+  
+    console.log('Send RTP to:', plainTransport.tuple.localIp, plainTransport.tuple.localPort);
+  
+    plainTransport.on('listenererror',(eventName,error)=>{
+      console.log(eventName,error);
+    })
+  
+    plainTransport.on('tuple',(eventName,event)=>{
+      console.log('trave',eventName,event)
+    })
+  
+    plainTransport.observer.on('trace',(eventName,event)=>{
+      console.log('trace',eventName,event)
+    })
+    
     producer = await plainTransport.produce({
       kind: 'video',
       rtpParameters: {
@@ -204,7 +197,6 @@ async function recreateProducer() {
   //     lastRtpTime = new Date()
   //   }
   // })
-
     producer.on('score', (score) => {
       console.log('Producer score updated:', score);
     });
