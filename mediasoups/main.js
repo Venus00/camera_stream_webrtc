@@ -191,7 +191,6 @@ async function recreateProducer() {
     });
   
   producer.on('trace',(traceEvent)=>{
-    console.log(traceEvent)
     if(traceEvent.type === 'rtp') {
       lastRtpTime = new Date()
     }
