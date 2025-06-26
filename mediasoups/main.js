@@ -68,6 +68,7 @@ const consumers = new Map();
   plainTransport.observer.on('trace',(eventName,event)=>{
     console.log('trace',eventName,event)
   })
+  
   producer = await plainTransport.produce({
     kind: 'video',
     rtpParameters: {
@@ -83,7 +84,7 @@ const consumers = new Map();
       encodings: [{ ssrc: 222222 }],
     },
   });
-
+  producer.enableTraceEvent(['rtp', 'keyframe', 'nack', 'pli']);
   producer.on('listenererror',(eventName,event)=>{
     console.log("listenError Producer",(eventName,event))
   })
@@ -131,7 +132,6 @@ io.on('connection', async (socket) => {
       console.log(`Transport connection state for ${socket.id}: ${state}`);
     });
     console.log('RTP port:', plainTransport.tuple.localPort);
-
     consumers.set(socket.id, { transport });
 
     cb({
@@ -163,6 +163,7 @@ io.on('connection', async (socket) => {
         paused: false,
       });
       await consumer.resume();
+      consumer.observer.on()
       console.log('Consumer created:', consumer.id, consumer.kind);
       consumers.get(socket.id).consumer = consumer;
       cb({
