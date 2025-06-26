@@ -199,7 +199,6 @@ async function recreateProducer() {
     }
   })
   producer.observer.on('trace',(eventName)=>{
-    console.log(eventName)
     if(eventName.type === 'rtp') {
       console.log("event rtp observer")
       lastRtpTime = new Date()
