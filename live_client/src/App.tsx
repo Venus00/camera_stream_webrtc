@@ -1,73 +1,68 @@
 import React, { useEffect, useRef } from 'react';
-import io from 'socket.io-client';
-import * as mediasoupClient from 'mediasoup-client';
+import { Device } from 'mediasoup-client';
+import { io } from 'socket.io-client';
 
-const VideoViewer = () => {
+const Viewer = () => {
   const videoRef = useRef(null);
+  const socket = useRef(null);
+  const device = useRef(null);
+  const recvTransport = useRef(null);
 
   useEffect(() => {
-    const socket = io(`http://54.36.62.219:3009`);
-    let device;
-    let transport;
+    socket.current = io('http://127.0.0.1:3000');
 
-    async function start() {
-      const rtpCapabilities = await new Promise(resolve => {
-        socket.emit('getRouterRtpCapabilities', resolve);
-      });
-      console.log(rtpCapabilities)
-      device = new mediasoupClient.Device();
-      await device.load({ routerRtpCapabilities: rtpCapabilities });
+    socket.current.on('newProducer', async ({ producerId }) => {
+      try {
+        device.current = new Device();
 
-      const transportInfo = await new Promise(resolve => {
-        socket.emit('createWebRtcTransport', {}, resolve);
-      });
-      console.log(transportInfo)
-      transport = device.createRecvTransport(transportInfo);
-      console.log('transport', transport)
+        const rtpCapabilities = await new Promise((resolve) => {
+          socket.current.emit('getRtpCapabilities', null, (rtpCapabilities) => {
+            console.log("Got RTP Capabilities", rtpCapabilities);
+            resolve(rtpCapabilities);
+          });
+        });
 
-      transport.on('connect', ({ dtlsParameters }, callback, errback) => {
-        socket.emit('connectWebRtcTransport', { dtlsParameters });
-        callback();
-      });
+        await device.current.load({ routerRtpCapabilities: rtpCapabilities });
 
-      const consumerInfo = await new Promise(resolve => {
-        socket.emit('consume', resolve);
-      });
-      console.log("conso", consumerInfo)
-      const consumer = await transport.consume({
-        id: consumerInfo.id,
-        producerId: consumerInfo.producerId,
-        kind: consumerInfo.kind,
-        rtpParameters: consumerInfo.rtpParameters,
-      });
-      console.log(consumer)
-      const stream = new MediaStream();
-      stream.addTrack(consumer.track);
+        const transportParams = await new Promise((resolve) =>
+          socket.current.emit('createTransport', { direction: 'recv' }, resolve)
+        );
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+        recvTransport.current = device.current.createRecvTransport(transportParams);
+
+        recvTransport.current.on('connect', ({ dtlsParameters }, callback) => {
+          socket.current.emit('connectTransport', { direction: 'recv', dtlsParameters }, callback);
+        });
+
+        const consumerParams = await new Promise((resolve) =>
+          socket.current.emit('consume', {
+            rtpCapabilities: device.current.rtpCapabilities,
+            producerId,
+          }, resolve)
+        );
+
+        const consumer = await recvTransport.current.consume(consumerParams);
+
+        const remoteStream = new MediaStream([consumer.track]);
+        videoRef.current.srcObject = remoteStream;
+
+        socket.current.emit('resume', null, () => { });
+      } catch (err) {
+        console.error('Viewer error:', err);
       }
-    }
-
-    start();
+    });
 
     return () => {
-      socket.disconnect();
+      if (socket.current) socket.current.disconnect();
     };
   }, []);
 
   return (
     <div>
-      <h1>tt</h1>
-      <video
-        ref={videoRef}
-        autoPlay
-        controls
-
-        style={{ width: '100%', maxWidth: '800px' }}
-      />
+      <h2>React Viewer</h2>
+      <video ref={videoRef} autoPlay playsInline controls={false} />
     </div>
   );
 };
 
-export default VideoViewer;
+export default Viewer;
