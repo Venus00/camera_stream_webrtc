@@ -7,6 +7,13 @@ const mediasoup = require('mediasoup');
 //ffmpeg -re -f dshow -i video="USB CAMERA" -vcodec libx264 -an -f rtp -ssrc 222222 rtp://127.0.0.1:16668
 //ffmpeg -re -f dshow -i video="5MP USB Camera" -vcodec libx264 -an -f rtp -ssrc 222222 rtp://192.168.10.195:34138
 //ffmpeg -re -f dshow -video_size 1280x720 -framerate 30 -rtbufsize 200M -i video="5MP USB Camera" -vcodec libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p -b:v 3000k -maxrate 3000k -bufsize 6000k -g 30 -keyint_min 30 -an -f rtp -ssrc 222222 rtp://154.144.229.22:36690
+// ffmpeg -re \
+//     -f v4l2 -input_format yuyv422 -video_size 320x240 -framerate 15 -i /dev/video2 \
+//     -pix_fmt yuv420p \
+//     -vcodec libx264 -preset ultrafast -tune zerolatency \
+//     -b:v 250k -maxrate 250k -bufsize 500k \
+//     -an -f rtp -ssrc 222222 rtp://54.36.62.219:5603
+
 const app = express();
 app.use(cors())
 
@@ -48,6 +55,18 @@ const consumers = new Map();
 
   let lastRtpTime = Date.now();
 
+
+  
+  plainTransport.observer.on("newworker", (worker) =>
+  {
+    console.log("new worker created [worke.pid:%d]", worker.pid);
+  
+    worker.observer.on("close", () => 
+    {
+      console.log("worker closed [worker.pid:%d]", worker.pid);
+    });
+
+  })
 
   producer = await plainTransport.produce({
     kind: 'video',
