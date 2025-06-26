@@ -168,6 +168,7 @@ async function recreateProducer() {
     
     if (producer) {
       producer.close();
+      producer = undefined
     }
     producer = await plainTransport.produce({
       kind: 'video',
@@ -193,17 +194,16 @@ async function recreateProducer() {
     });
   
   producer.on('trace',(eventName)=>{
-    console.log(eventName)
-    if(eventName === 'rtp') {
-      lastRtpTime = new Date()
-    }
-  })
-  producer.observer.on('trace',(eventName)=>{
     if(eventName.type === 'rtp') {
-      console.log("event rtp observer")
       lastRtpTime = new Date()
     }
   })
+  // producer.observer.on('trace',(eventName)=>{
+  //   if(eventName.type === 'rtp') {
+  //     console.log("event rtp observer")
+  //     lastRtpTime = new Date()
+  //   }
+  // })
 
     producer.on('score', (score) => {
       console.log('Producer score updated:', score);
