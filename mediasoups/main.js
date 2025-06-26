@@ -200,13 +200,15 @@ async function recreateProducer() {
     });
 
     producer.enableTraceEvent(['rtp']);
-    console.log('✅ Producer recreated at', new Date());
+    console.log('Producer recreated at', new Date());
     producer.on('listenererror',(eventName,event)=>{
-      if(eventName === 'rtp') lastRtpTime = new Date()
+    
       console.log("listenError Producer",(eventName,event))
     });
   
-  
+  producer.on('trace',(eventName)=>{
+    if(eventName === 'rtp') lastRtpTime = new Date()
+  })
     producer.on('score', (score) => {
       console.log('Producer score updated:', score);
     });
