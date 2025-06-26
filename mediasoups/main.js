@@ -65,6 +65,9 @@ const consumers = new Map();
     console.log('trave',eventName,event)
   })
 
+  plainTransport.observer.on('trace',(eventName,event)=>{
+    console.log('trace',eventName,event)
+  })
   producer = await plainTransport.produce({
     kind: 'video',
     rtpParameters: {
