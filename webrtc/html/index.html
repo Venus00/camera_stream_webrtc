@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Mediasoup Plain Sender</title>
+    <script src="
+    https://cdn.jsdelivr.net/npm/mediasoup-client@3.12.1/lib/index.min.js
+    "></script>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+</head>
+
+<body>
+    <h1>Camera Sender</h1>
+    <video id="localVideo" autoplay muted playsinline style="width: 480px;"></video>
+
+    <script>
+        (async () => {
+            const socket = io('http://127.0.0.1:3000');
+
+            // Wait for socket to connect
+            await new Promise(resolve => {
+                if (socket.connected) resolve();
+                else socket.on('connect', resolve);
+            });
+
+            const device = new mediasoupClient.Device();
+
+            // 1. Get router RTP capabilities
+            const routerRtpCapabilities = await new Promise(resolve => {
+                socket.emit('getRtpCapabilities', null, resolve);
+            });
+
+            await device.load({ routerRtpCapabilities });
+
+            // 2. Create send transport
+            const transportOptions = await new Promise(resolve => {
+                socket.emit('createTransport', { direction: 'send' }, resolve);
+            });
+
+            const sendTransport = device.createSendTransport(transportOptions);
+
+            sendTransport.on('connect', ({ dtlsParameters }, callback, errback) => {
+                socket.emit('connectTransport', { transportId: sendTransport.id, dtlsParameters }, callback);
+            });
+
+            sendTransport.on('produce', ({ kind, rtpParameters }, callback, errback) => {
+                socket.emit('produce', { transportId: sendTransport.id, kind, rtpParameters }, ({ id }) => {
+                    callback({ id });
+                });
+            });
+
+            // 3. Get user media
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            document.getElementById('localVideo').srcObject = stream;
+
+            // 4. Produce video track
+            const videoTrack = stream.getVideoTracks()[0];
+            await sendTransport.produce({ track: videoTrack });
+
+            console.log('Streaming started');
+        })();
+    </script>
+</body>
+
+</html>
