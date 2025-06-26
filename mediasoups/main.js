@@ -168,7 +168,6 @@ async function recreateProducer() {
     
     if (producer) {
       producer.close();
-      producer = undefined
     }
     producer = await plainTransport.produce({
       kind: 'video',
