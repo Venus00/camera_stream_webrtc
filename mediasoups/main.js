@@ -16,7 +16,7 @@ const mediasoup = require('mediasoup');
 
 const app = express();
 app.use(cors())
-
+let lastRtpTime = Date.now();
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
@@ -55,7 +55,7 @@ const consumers = new Map();
 
   console.log('Send RTP to:', plainTransport.tuple.localIp, plainTransport.tuple.localPort);
 
-  let lastRtpTime = Date.now();
+
 
 
 
