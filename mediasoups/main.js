@@ -138,7 +138,6 @@ io.on('connection', async (socket) => {
         paused: false,
       });
       await consumer.resume();
-      consumer.observer.on()
       console.log('Consumer created:', consumer.id, consumer.kind);
       consumers.get(socket.id).consumer = consumer;
       cb({
