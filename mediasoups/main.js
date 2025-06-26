@@ -48,70 +48,51 @@ const consumers = new Map();
 
   let lastRtpTime = Date.now();
 
-
-
-
-
-  plainTransport.observer.on('tuple', (tuple) => {
-    console.log('PlainTransport tuple event:', tuple);
-  });
-
-  plainTransport.observer.on('packet', (packet) => {
-    console.log('PlainTransport received RTP packet:', packet.length, 'bytes');
+  plainTransport.observer.on('packet', async () => {
     lastRtpTime = Date.now();
-
+  
+    if (!producer) {
+      try {
+        console.log('New RTP stream detected. Recreating producer...');
+        producer = await plainTransport.produce({
+          kind: 'video',
+          rtpParameters: {
+            codecs: [
+              {
+                mimeType: 'video/H264',
+                clockRate: 90000,
+                payloadType: 96,
+                rtcpFeedback: [],
+                parameters: {},
+              },
+            ],
+            encodings: [{ ssrc: 222222 }],
+          },
+        });
+  
+        console.log('New producer created:', producer.id);
+  
+        producer.on('score', (score) => console.log('Producer score:', score));
+        producer.on('trace', (trace) => console.log('Producer trace:', trace));
+        producer.on('transportclose', () => {
+          console.log('Producer transport closed');
+          producer = null;
+        });
+      } catch (err) {
+        console.error('Error recreating producer:', err);
+      }
+    }
   });
-  producer = await plainTransport.produce({
-    kind: 'video',
-    rtpParameters: {
-      codecs: [
-        {
-          mimeType: 'video/H264',
-          clockRate: 90000,
-          payloadType: 96,
-          rtcpFeedback: [],
-          parameters: {},
-        },
-      ],
-      encodings: [{ ssrc: 222222 }],
-    },
-  });
-
+  
+  // Check if the producer is inactive (e.g. FFmpeg stopped)
   setInterval(async () => {
-    if (Date.now() - lastRtpTime > 5000 && producer) {
-      console.log('No RTP packets received for 5s, closing producer...');
+    if (producer && Date.now() - lastRtpTime > 5000) {
+      console.log('No RTP received for 5s. Closing producer...');
       await producer.close();
       producer = null;
-      producer = await plainTransport.produce({
-        kind: 'video',
-        rtpParameters: {
-          codecs: [
-            {
-              mimeType: 'video/H264',
-              clockRate: 90000,
-              payloadType: 96,
-              rtcpFeedback: [],
-              parameters: {},
-            },
-          ],
-          encodings: [{ ssrc: 222222 }],
-        },
-      });
     }
   }, 1000);
 
-
-  producer.on('score', (score) => {
-    console.log('Producer score updated:', score);
-  });
-  producer.on('trace', (trace) => {
-    console.log('Producer trace updated:', trace);
-  });
-
-  producer.on('transportclose', () => {
-    console.log('Producer transport closed');
-  });
-  console.log('Producer created:', producer.id);
 })();
 
 io.on('connection', async (socket) => {
