@@ -77,28 +77,7 @@ const consumers = new Map();
   });
 
 
-  setInterval(async () => {
-  if (Date.now() - lastRtpTime > 5000 && producer) {
-    console.log('No RTP packets received for 5s, closing producer...');
-    await producer.close();
-    producer = null;
-    producer = await plainTransport.produce({
-      kind: 'video',
-      rtpParameters: {
-        codecs: [
-          {
-            mimeType: 'video/H264',
-            clockRate: 90000,
-            payloadType: 96,
-            rtcpFeedback: [],
-            parameters: {},
-          },
-        ],
-        encodings: [{ ssrc: 222222 }],
-      },
-    });
-  }
-}, 1000);
+
   producer.on('score', (score) => {
     console.log('Producer score updated:', score);
   });
