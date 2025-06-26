@@ -168,46 +168,50 @@ async function recreateProducer() {
     
     if (producer) {
       producer.close();
+      producer.resume();
     }
-    producer = await plainTransport.produce({
-      kind: 'video',
-      rtpParameters: {
-        codecs: [
-          {
-            mimeType: 'video/H264',
-            clockRate: 90000,
-            payloadType: 96,
-            parameters: {},
-            rtcpFeedback: [],
-          },
-        ],
-        encodings: [{ ssrc: 222222 }],
-      },
-    });
-
-    producer.enableTraceEvent(['rtp']);
-    console.log('Producer recreated at', new Date());
-    producer.on('listenererror',(eventName,event)=>{
-    
-      console.log("listenError Producer",(eventName,event))
-    });
+    else {
+      producer = await plainTransport.produce({
+        kind: 'video',
+        rtpParameters: {
+          codecs: [
+            {
+              mimeType: 'video/H264',
+              clockRate: 90000,
+              payloadType: 96,
+              parameters: {},
+              rtcpFeedback: [],
+            },
+          ],
+          encodings: [{ ssrc: 222222 }],
+        },
+      });
   
-  producer.on('trace',(eventName)=>{
-    if(eventName.type === 'rtp') {
-      lastRtpTime = new Date()
+      producer.enableTraceEvent(['rtp']);
+      console.log('Producer recreated at', new Date());
+      producer.on('listenererror',(eventName,event)=>{
+      
+        console.log("listenError Producer",(eventName,event))
+      });
+    
+    producer.on('trace',(eventName)=>{
+      if(eventName.type === 'rtp') {
+        lastRtpTime = new Date()
+      }
+    })
+    // producer.observer.on('trace',(eventName)=>{
+    //   if(eventName.type === 'rtp') {
+    //     console.log("event rtp observer")
+    //     lastRtpTime = new Date()
+    //   }
+    // })
+  
+      producer.on('score', (score) => {
+        console.log('Producer score updated:', score);
+      });
+      console.log('Producer created:', producer.id);
     }
-  })
-  // producer.observer.on('trace',(eventName)=>{
-  //   if(eventName.type === 'rtp') {
-  //     console.log("event rtp observer")
-  //     lastRtpTime = new Date()
-  //   }
-  // })
-
-    producer.on('score', (score) => {
-      console.log('Producer score updated:', score);
-    });
-    console.log('Producer created:', producer.id);
+   
   } catch (error) {
     console.error(error);
   }
