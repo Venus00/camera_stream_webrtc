@@ -67,6 +67,7 @@ io.on('connection', async (socket) => {
     cb(router.rtpCapabilities);
   });
 
+  
   socket.on('createWebRtcTransport', async (_, cb) => {
     const transport = await router.createWebRtcTransport({
       listenIps: [{ ip: '0.0.0.0', announcedIp: '54.36.62.219' }],
