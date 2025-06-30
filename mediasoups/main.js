@@ -132,7 +132,6 @@ io.on('connection', async (socket) => {
   });
 
   setInterval(()=>{
-    console.log("check rtp error",isRtpError)
     if(isRtpError)
       {
         console.log("sending error producer");
