@@ -11,9 +11,19 @@ const Viewer = () => {
   useEffect(() => {
     socket.current = io('http://127.0.0.1:3000');
 
-    socket.current.on('newProducer', async ({ producerId }) => {
-      try {
-        device.current = new Device();
+    socket.on('streamError', () => {
+      console.log("stream output error please reconnect");
+      start();
+
+    })
+    setup();
+    async function setup() {
+      const rtpCapabilities = await new Promise(resolve => {
+        socket.emit('getRouterRtpCapabilities', resolve);
+      });
+      console.log(rtpCapabilities)
+      device = new mediasoupClient.Device();
+      await device.load({ routerRtpCapabilities: rtpCapabilities });
 
         const rtpCapabilities = await new Promise((resolve) => {
           socket.current.emit('getRtpCapabilities', null, (rtpCapabilities) => {
@@ -22,27 +32,28 @@ const Viewer = () => {
           });
         });
 
-        await device.current.load({ routerRtpCapabilities: rtpCapabilities });
+
+      transport.on('connect', ({ dtlsParameters }, callback, errback) => {
+        socket.emit('connectWebRtcTransport', { dtlsParameters });
+        callback();
+      });
+      start()
+    }
+    async function start() {
+
 
         const transportParams = await new Promise((resolve) =>
           socket.current.emit('createTransport', { direction: 'recv' }, resolve)
         );
 
-        recvTransport.current = device.current.createRecvTransport(transportParams);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
 
-        recvTransport.current.on('connect', ({ dtlsParameters }, callback) => {
-          socket.current.emit('connectTransport', { direction: 'recv', dtlsParameters }, callback);
-        });
 
-        const consumerParams = await new Promise((resolve) =>
-          socket.current.emit('consume', {
-            rtpCapabilities: device.current.rtpCapabilities,
-            producerId,
-          }, resolve)
-        );
 
-        const consumer = await recvTransport.current.consume(consumerParams);
 
+    }
         const remoteStream = new MediaStream([consumer.track]);
         videoRef.current.srcObject = remoteStream;
 
@@ -59,8 +70,13 @@ const Viewer = () => {
 
   return (
     <div>
-      <h2>React Viewer</h2>
-      <video ref={videoRef} autoPlay playsInline controls={false} />
+      <video
+        ref={videoRef}
+        autoPlay
+        controls
+
+        style={{ width: '100%', maxWidth: '100%' }}
+      />
     </div>
   );
 };
