@@ -6,7 +6,7 @@ const VideoViewer = () => {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    const socket = io(`http://http://54.36.62.219:3009`);
+    const socket = io(`http://54.36.62.219:3009`);
     let device;
     let transport;
 
