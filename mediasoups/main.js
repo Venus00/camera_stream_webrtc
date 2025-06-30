@@ -13,6 +13,9 @@ const mediasoup = require('mediasoup');
 //     -vcodec libx264 -preset ultrafast -tune zerolatency \
 //     -b:v 250k -maxrate 250k -bufsize 500k \
 //     -an -f rtp -ssrc 222222 rtp://54.36.62.219:5603
+//ffmpeg -re -f dshow -video_size 1280x720 -framerate 30 -rtbufsize 200M -i video="Integrated Camera" -vcodec libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p -b:v 3000k -maxrate 3000k -bufsize 6000k -g 30 -keyint_min 30 -an -f rtp -ssrc 222222 rtp://192.168.10.195:5603
+
+let isRtpError = false;
 
 const app = express();
 app.use(cors())
@@ -70,6 +73,7 @@ io.on('connection', async (socket) => {
       enableUdp: false,
       enableTcp: true,
       preferTcp: true,
+
     });
     transport.on('connectionstatechange', (state) => {
       console.log(`Transport connection state for ${socket.id}: ${state}`);
@@ -124,6 +128,18 @@ io.on('connection', async (socket) => {
     consumers.delete(socket.id);
     console.log('Client disconnected:', socket.id);
   });
+
+  setInterval(()=>{
+    console.log("check rtp error",isRtpError)
+    if(isRtpError)
+      {
+        console.log("sending error producer");
+        socket.emit('streamError',true);
+        isRtpError = false;
+      }
+    
+  },1000)
+
 });
 
 server.listen(3009, () => {
@@ -133,7 +149,7 @@ server.listen(3009, () => {
 async function recreateProducer() {
   try {
     
-
+   
     if (producer) {
       producer.close();
     }
@@ -168,6 +184,7 @@ async function recreateProducer() {
     })
     
     producer = await plainTransport.produce({
+      id:'a9906fe1-b06e-4580-8eaa-e6d19023f494',
       kind: 'video',
       rtpParameters: {
         codecs: [
@@ -205,6 +222,8 @@ async function recreateProducer() {
       console.log('Producer score updated:', score);
     });
     console.log('Producer created:', producer.id);
+    isRtpError = true;
+
   } catch (error) {
     console.error(error);
   }
