@@ -10,7 +10,13 @@ const VideoViewer = () => {
     let device;
     let transport;
 
-    async function start() {
+    socket.on('streamError', () => {
+      console.log("stream output error please reconnect");
+      start();
+
+    })
+    setup();
+    async function setup() {
       const rtpCapabilities = await new Promise(resolve => {
         socket.emit('getRouterRtpCapabilities', resolve);
       });
@@ -29,6 +35,9 @@ const VideoViewer = () => {
         socket.emit('connectWebRtcTransport', { dtlsParameters });
         callback();
       });
+      start()
+    }
+    async function start() {
 
       const consumerInfo = await new Promise(resolve => {
         socket.emit('consume', resolve);
@@ -47,6 +56,10 @@ const VideoViewer = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
+
+
+
+
     }
 
     start();
@@ -58,13 +71,12 @@ const VideoViewer = () => {
 
   return (
     <div>
-      <h1>tt</h1>
       <video
         ref={videoRef}
         autoPlay
         controls
 
-        style={{ width: '100%', maxWidth: '800px' }}
+        style={{ width: '100%', maxWidth: '100%' }}
       />
     </div>
   );
