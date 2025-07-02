@@ -147,7 +147,7 @@ const VideoViewer = () => {
   const scheduleReconnect = () => {
     if (reconnectTimer.current || isUnmounted) return;
 
-    console.log( Reconnecting in ${RECONNECT_DELAY_MS / 1000}s...);
+    console.log(` Reconnecting in ${RECONNECT_DELAY_MS / 1000}s...`);
     reconnectTimer.current = setTimeout(() => {
       reconnectTimer.current = null;
       connect();
