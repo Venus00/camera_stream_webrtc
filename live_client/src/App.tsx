@@ -91,50 +91,61 @@ const VideoViewer = () => {
     }
   };
 
-  const consume = async (socketInstance, transport) => {
-    try {
-      if (consumerRef.current) {
-        console.log(' Reusing existing consumer');
-        bindTrack(consumerRef.current.track);
-        return;
-      }
-
-      const consumerInfo = await new Promise((resolve) =>
-        socketInstance.emit('consume', resolve)
-      );
-
-      const consumer = await transport.consume({
-        id: consumerInfo.id,
-        producerId: consumerInfo.producerId,
-        kind: consumerInfo.kind,
-        rtpParameters: consumerInfo.rtpParameters,
-      });
-
-      consumerRef.current = consumer;
-
-      consumer.on('transportclose', () => {
-        console.warn('Consumer transport closed');
-        scheduleReconnect();
-      });
-
-      consumer.on('trackended', () => {
-        console.warn('Track ended — showing offline');
-        if (videoRef.current) videoRef.current.srcObject = null;
-        setIsOffline(true); 
-      });
-
-      consumer.track.onunmute = () => {
-        console.log('Track resumed — hiding offline banner');
-        setIsOffline(false); 
-        bindTrack(consumer.track);
-      };
-
-      bindTrack(consumer.track);
-    } catch (err) {
-      console.error('Consume error:', err);
-      scheduleReconnect();
+const consume = async (socketInstance, transport) => {
+  try {
+    // Prevent re-consuming the same stream
+    if (consumerRef.current) {
+      console.log('Reusing existing consumer');
+      return;
     }
-  };
+
+    const consumerInfo = await new Promise((resolve) =>
+      socketInstance.emit('consume', resolve)
+    );
+
+    const consumer = await transport.consume({
+      id: consumerInfo.id,
+      producerId: consumerInfo.producerId,
+      kind: consumerInfo.kind,
+      rtpParameters: consumerInfo.rtpParameters,
+    });
+
+    consumerRef.current = consumer;
+
+    consumer.on('transportclose', () => {
+      console.warn('Consumer transport closed');
+      setIsOffline(true);
+      scheduleReconnect();
+    });
+
+    consumer.on('trackended', () => {
+      console.warn('Track ended — marking offline');
+      clearVideo();
+      setIsOffline(true);
+    });
+
+    consumer.track.onunmute = () => {
+      const alreadySet = videoRef.current?.srcObject instanceof MediaStream;
+      if (!alreadySet) {
+        console.log('Track resumed — hiding offline banner');
+        bindTrack(consumer.track);
+        setIsOffline(false);
+      }
+    };
+
+    if (!consumer.track.muted) {
+      console.log('Track not muted — ready immediately');
+      bindTrack(consumer.track);
+      setIsOffline(false);
+    } else {
+      console.log('Waiting for track to unmute...');
+    }
+  } catch (err) {
+    console.error('Consume error:', err);
+    scheduleReconnect();
+  }
+};
+
 
   const bindTrack = (track) => {
     const stream = new MediaStream();
