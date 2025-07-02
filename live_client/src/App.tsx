@@ -125,8 +125,8 @@ const VideoViewer = () => {
 
       consumer.track.onunmute = () => {
         console.log('Track resumed — hiding offline banner');
-        setIsOffline(false); 
-        bindTrack(consumer.track);
+        //setIsOffline(false); 
+        //bindTrack(consumer.track);
       };
 
       bindTrack(consumer.track);
