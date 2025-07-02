@@ -33,7 +33,7 @@ const VideoViewer = () => {
 
       cleanup(false);
 
-      const newSocket = io(http://54.36.62.219:3009, { reconnection: false });
+      const newSocket = io('http://54.36.62.219:3009', { reconnection: false });
       setSocket(newSocket);
 
       newSocket.on('connect', async () => {
